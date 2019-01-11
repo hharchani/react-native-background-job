@@ -57,51 +57,7 @@ class ReactNativeEventStarter {
     public void onCreate() {
       super.onCreate();
       Context mContext = this.getApplicationContext();
-      SharedPreferences preferences = mContext.getSharedPreferences(SETTINGS_KEY, MODE_PRIVATE);
-      String contextTitle = preferences.getString(CONTEXT_TITLE_SETTING, "Running in background...");
-      String contextText = preferences.getString(CONTEXT_TEXT_SETTING, "Background job");
-      String CHANNEL_ID = "Background job";
-      Notification notification = null;
-      NotificationManager notificationManager =
-        (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-      MyHeadlessJsTaskService jsTaskService = new MyHeadlessJsTaskService();
-
-      Intent intent = new Intent();
-      PendingIntent pendingIntent = PendingIntent.getService(mContext, 0, intent, 0);
-
-      if (Utils.isMyServiceRunning(jsTaskService.getClass(), mContext)) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-          NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_LOW);
-          ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(channel);
-          notification = new Notification.Builder(mContext, CHANNEL_ID)
-            .setContentTitle(contextTitle)
-            .setContentText(contextText)
-            .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setTicker(contextTitle)
-            .build();
-        } else {
-          notification = new Notification.Builder(mContext)
-            .setContentTitle(contextTitle)
-            .setContentText(contextText)
-            .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setTicker(contextTitle)
-            .build();
-        }
-        notification.flags = notification.flags
-          | Notification.FLAG_ONGOING_EVENT;
-        notification.flags |= Notification.FLAG_AUTO_CANCEL;
-
-        notificationManager.notify(1, notification);
-//        startForeground(1, notification);
-      } else {
-        stopForeground(true);
-        notificationManager.cancel(1);
-      }
+      showNotification(mContext);
     }
 
     @Nullable
@@ -129,11 +85,70 @@ class ReactNativeEventStarter {
       starter.putExtras(jobBundle);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        context.startForegroundService(starter);
+        try {
+          context.startForegroundService(starter);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       } else {
         context.startService(starter);
       }
     }
+
+    private void showNotification(Context mContext) {
+      SharedPreferences preferences = mContext.getSharedPreferences(SETTINGS_KEY, MODE_PRIVATE);
+      String contextTitle = preferences.getString(CONTEXT_TITLE_SETTING, "Running in background...");
+      String contextText = preferences.getString(CONTEXT_TEXT_SETTING, "Background job");
+      String CHANNEL_ID = "Purpos Kot Print Service";
+      Notification notification = null;
+      NotificationManager notificationManager =
+        (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
+
+      MyHeadlessJsTaskService jsTaskService = new MyHeadlessJsTaskService();
+
+      Intent intent = new Intent();
+      PendingIntent pendingIntent = PendingIntent.getService(mContext, 0, intent, 0);
+
+      if (Utils.isMyServiceRunning(jsTaskService.getClass(), mContext)) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+          NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
+          if (notificationManager != null) {
+            notificationManager.createNotificationChannel(channel);
+          }
+          notification = new Notification.Builder(mContext, CHANNEL_ID)
+            .setContentTitle(contextTitle)
+            .setContentText(contextText)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setTicker(contextTitle)
+            .build();
+
+          notification.flags = notification.flags
+            | Notification.FLAG_ONGOING_EVENT;
+          notification.flags |= Notification.FLAG_AUTO_CANCEL;
+
+          notificationManager.notify(1, notification);
+          startForeground(1, notification);
+        } else {
+          notification = new Notification.Builder(mContext)
+            .setContentTitle(contextTitle)
+            .setContentText(contextText)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setTicker(contextTitle)
+            .build();
+
+          notification.flags = notification.flags
+            | Notification.FLAG_ONGOING_EVENT;
+          notification.flags |= Notification.FLAG_AUTO_CANCEL;
+
+          notificationManager.notify(1, notification);
+        }
+      } else {
+        notificationManager.cancel(1);
+      }
+    }
   }
 }
-
